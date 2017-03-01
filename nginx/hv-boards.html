@@ -1,0 +1,55 @@
+<link rel="import" href="./bower_components/polymer/polymer.html">
+<link rel="import" href="./bower_components/iron-ajax/iron-ajax.html">
+
+<link rel="import" href="./bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+<link rel="import" href="voltage-control.html">
+
+<dom-module id="hv-boards">
+    <template>
+          <style include="iron-flex iron-flex-alignment">
+            ul {
+            padding: 0;
+            list-style: none;
+            }
+
+            .item {
+            padding: 10px;
+            }
+        </style>
+            <ul>
+                <template is="dom-repeat" items="{{response}}">
+                    <li class="item layout horizontal center-justified">
+                        <voltage-control 
+                        channel="{{displayIndex(index)}}" 
+                        title="{{item.0}}" 
+                        default-voltage="{{item.1}}" 
+                        gpio="{{item.2}}" 
+                        coefficient="{{item.3.0}}" 
+                        offset="{{item.3.1}}"></voltage-control>   
+                    </li>         
+                </template>
+            </ul>
+            
+            <iron-ajax
+            auto
+            url="/api/hardware/modules"
+            handle-as="json"
+            last-response={{response}}
+            debounce-duration="300"></iron-ajax>            
+
+    </template>
+    <script>
+        Polymer({
+            is: 'hv-boards',
+            properties: {
+                response: {
+                    type: Object,
+                },
+            },
+            displayIndex: function(index){
+                return index+1;
+            }
+        });
+    </script>
+</dom-module>

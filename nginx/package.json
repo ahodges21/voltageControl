@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "start" : "npm install && bower install --allow-root && nginx -g 'daemon off;'"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  }
+}

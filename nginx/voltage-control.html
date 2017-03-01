@@ -1,0 +1,193 @@
+<link rel="import" href="./bower_components/polymer/polymer.html">
+<link rel="import" href="./bower_components/paper-card/paper-card.html">
+<link rel="import" href="./bower_components/paper-input/paper-input.html">
+<link rel="import" href="./bower_components/paper-button/paper-button.html">
+<link rel="import" href="./bower_components/google-chart/google-chart.html">
+<link rel="import" href="./bower_components/paper-toast/paper-toast.html">
+
+<link rel="import" href="./bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+<dom-module id="voltage-control">
+
+    <template>
+        <style include="iron-flex iron-flex-alignment">
+            :host {
+                display: block;
+            }
+            
+            div * {
+                margin: 10px;
+            }
+        </style>
+
+        <paper-card heading="Channel {{channel}}">
+            <div class="card-content">
+                {{title}} default voltage: {{defaultVoltage}} on GPIO {{gpio}}. <br>
+                Byte = 0 to disable, range {{_rangeMin}}V to {{_rangeMax}}V.
+
+                <google-chart
+                type="line"
+                options="{{chartOptions}}"
+                data = "{{chartData}}">
+                </google-chart>
+
+            </div>
+            <div class="layout horizontal wrap card-actions">
+                <div class="layout vertical flex">
+                    <paper-input 
+                    id="voltageInput"
+                    label="Voltage" 
+                    type="number" 
+                    error-message="Out of range!"
+                    value="{{voltage}}"></paper-input>
+                    <paper-button raised on-tap="setVoltage">Set Voltage</paper-button>
+                </div>
+                <div class="layout vertical flex">
+                    <paper-input 
+                    id="byteInput"
+                    label="Byte" 
+                    auto-validate 
+                    type=number 
+                    min=0 
+                    max=255 
+                    error-message="Out of range!"
+                    value="{{byte}}"></paper-input>
+                    <paper-button raised on-tap="setByte">Set Byte</paper-button>
+                </div>
+            </div>
+        </paper-card>
+
+        <iron-ajax
+        id="ajax"
+        url= "{{_url}}"
+        params = "{{_params}}"
+        handle-as="json"
+        content-type="application/json"
+        method="POST"
+        on-response="handleResponse"
+        debounce-duration="300"></iron-ajax>
+
+        <paper-toast id="toast" text="{{_response.status}}, Voltage:{{_response.voltage}}, Byte:{{_response.byte}}"></paper-toast>
+        <paper-toast id="errorToast" text="{{_response.status}}, Error: {{_response.error}}"></paper-toast>
+
+    </template>
+
+    <script>
+        Polymer({
+            is: 'voltage-control',
+            properties: {
+                channel: {
+                    type: Number,
+                },
+                title: {
+                    type: String,
+                },
+                defaultVoltage: {
+                    type: Number
+                },
+                gpio: {
+                    type: Number,
+                },
+                coefficient: {
+                    type: Number,
+                },
+                offset: {
+                    type: Number,
+                },
+                voltage: {
+                    type: Number,
+                },
+                byte: {
+                    type: Number,
+                    value: 0,
+                },
+                _response: {
+                    type: Object,
+                },
+                _params: {
+                    type: Object,
+                },
+                _url: {
+                    type: String,
+                },
+                _rangeMin: {
+                    type: Number,
+                    computed: "computeRangeMin(coefficient, offset)",
+                },
+                _rangeMax: {
+                    type: Number,
+                    computed: "computeRangeMax(coefficient, offset)",                    
+                },
+                chartData: {
+                    type: Object,
+                    computed: "computeChartData(coefficient, offset, title)"
+                },
+                chartOptions: {
+                    type: Object,
+                    value: {
+                        title: "Byte vs Voltage", 
+                        titlePosition: "in",
+                        pointSize:"2",
+                        explorer: {
+                            keepInBounds: "true",
+                            maxZoomIn: "0.1",
+                            maxZoomOut: "1",
+                            zoomDelta: "1.1"
+                        }, 
+                        chartArea: {
+                            left: 0,
+                            top: 0,
+                            width: "100%",
+                            height: "100%"
+                        },
+                        legend: {
+                            position: "in",
+                            alignment: "end"
+                        },
+                        hAxis:{
+                            "title":"Byte",
+                            "textPosition":"in"
+                        },
+                        vAxis:{
+                            "title":"Byte",
+                            "textPosition":"in"
+                        }
+                    },
+                },
+            },
+            computeRangeMin : function(coefficient, offset){
+                return (255*coefficient + offset).toFixed(3);
+            },
+            computeRangeMax : function(coefficient, offset){
+                return (1*coefficient + offset).toFixed(3);
+            },
+            computeChartData : function(coefficient, offset, title){
+                var data = [["Byte", title]];
+                for(var i = 1 ; i < 256 ; i++){
+                    data.push([i, Number((i*coefficient + offset).toFixed(3))]);
+                }
+                return data;
+            },
+            setByte : function(){
+                var byte = this.$.byteInput.value;
+                this._params = {byte: Number(byte)};
+                this._url = "/api/hardware/modules/"+this.gpio+"/set-byte";
+                this.$.ajax.generateRequest();
+            },
+            setVoltage : function(){
+                var voltage = this.$.voltageInput.value; 
+                this._params = {voltage: Number(voltage)};
+                this._url = "/api/hardware/modules/"+this.gpio+"/set-voltage";                
+                this.$.ajax.generateRequest();                         
+            },
+            handleResponse : function(data){
+                this._response=data.detail.response;
+                if(this._response.error){
+                    this.$.errorToast.open();                    
+                } else {
+                    this.$.toast.open();                
+                }
+            }
+        });
+    </script>
+</dom-module>

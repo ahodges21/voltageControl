@@ -1,0 +1,29 @@
+version: "2"
+
+services:
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: arm.Dockerfile
+    logging:
+      driver: "none"
+    volumes:
+      - ./nginx:/usr/share/nginx/html:rw
+    ports:
+      - "80:80"
+      - "443:443"
+    links:
+      - node
+
+  node:
+    build:
+      context: ./node
+      dockerfile: arm.Dockerfile
+    volumes:
+      - ./node:/usr/src/app:rw
+      - /lib/modules:/lib/modules:rw
+    cap_add:
+      - SYS_RAWIO
+    privileged: true
+    ports:
+      - "5858:5858"

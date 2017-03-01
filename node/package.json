@@ -1,0 +1,17 @@
+{
+  "name": "voltage-control",
+  "version": "1.0.0",
+  "description": "Control the voltage on the stacked pcbs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npm install --no-bin-links && nodemon -L --debug=5858 server.js"
+  },
+  "author": "Sawaiz",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.14.0",
+    "nodemon": "^1.11.0",
+    "onoff": "*"
+  }
+}
